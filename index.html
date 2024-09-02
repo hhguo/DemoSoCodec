@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>SoCodec</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="jquery-3.5.js"></script>
+    <style>
+        .socodec-img {
+            height: 50%;
+            width: 50%; /* maintain aspect ratio */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="text1">SoCodec: A Semantic-Ordered Multi-Stream Speech Codec for Efficient Language Model Based Text-to-Speech Synthesis
+        </div>
+        <div id="intro">
+            <p>
+                Haohan Guo, Fenglong Xie, Jiawen Kang, Yujia Xiao, Xixin Wu, Helen Meng
+            </p>
+            <p>
+                The Chinese University of Hong Kong, Hong Kong SAR, China<br>
+                Xiaohongshu Inc., Shanghai, China<br>
+                Northwestern Polytechnical University, Xi'an, China
+            </p>
+            <p>
+            hguo@se.cuhk.edu.hk
+            </p>
+            <p>
+            [<a href="https://arxiv.org/abs/2104.00355">Paper</a>]
+            </p>
+        </div>
+    </div>
+    <div class="content-container">
+        <br>
+        <p style="text-align: center;">
+            <img src="socodec_all.png" class="socodec-img" alt="SOCODEC">
+        </p>
+        <p>
+            The long speech sequence has been troubling language models (LM) based TTS approaches in terms of modeling complexity and efficiency. This work proposes SoCodec, a semantic-ordered multi-stream speech codec, to address this issue. It compresses speech into a shorter, multi-stream discrete semantic sequence with multiple tokens at each frame. Meanwhile, the ordered product quantization is proposed to constrain this sequence into an ordered representation. It can be applied with a multi-stream delayed LM to achieve better autoregressive generation along both time and stream axes in TTS. The experimental result strongly demonstrates the effectiveness of the proposed approach, achieving superior performance over baseline systems even if compressing the frameshift of speech from 20ms to 240ms (12x). The ablation studies further validate the importance of learning the proposed ordered multi-stream semantic representation in pursuing shorter speech sequences for efficient LM-based TTS.
+        </p>
+    </div>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <div class="content-container">
+        <div class="content-title">Samples</div>
+        <div id='descript'>
+        </div>
+        <div id='legend'>
+            <ul style="list-style-type:circle">
+            </ul>
+        </div>
+        <div class="option-div" id="tests-div">
+            <label for="tests">Choose test:</label>
+            <select id="tests" onchange=record(this)>
+                <option value="system_comparison">System Comparison</option>
+            </select>
+        </div>
+        <div id="result-div"></div>
+    </div>
+
+    <div id="loading-status">Loading......</div>
+
+    <script>
+        var mode = 0;
+        var audio;
+        var filename = null;
+        function play(file_name) {
+            if (filename !== file_name) {
+                if (audio) {
+                    audio.pause();
+                }
+
+                audio = new Audio(file_name);
+                filename = file_name;
+                audio.play();
+            } else {
+                if (audio.paused) {
+                    audio = new Audio(file_name);
+                    filename = file_name;
+                    audio.play();
+                } else {
+                    audio.pause();
+                }
+            }
+        }
+        function switchMode() {
+            if (document.getElementById("myonoffswitch").checked) {
+                mode = 0;
+            }
+            else {
+                mode = 1;
+            }
+        }
+    </script>
+
+    <script>
+        /* Highlights the navigation bar button corresponding to page
+        to indicate which page a user is currently viewing.
+        */
+        var dataset = "wenetspeech4tts";
+        var tasks = "tts";
+        var tests = 'system_comparison';
+
+        var tests_to_methods = {
+            "system_comparison": ['reference', 'xtts', 'valle', 'so40', 'so120', 'so240'],
+        };
+
+        var method_to_hdr = {
+            "reference": "Reference Audio",
+            "xtts": "X-TTS",
+            "valle": "VALL-E",
+            "so40": "SoCodec-40ms",
+            "so120": "SoCodec-120ms",
+            "so240": "SoCodec-240ms",
+        };
+
+        var id_list = [
+            ['TEST_NET_Y0000000100_pK0sjf8ok-U_S00042', '那我拿着毒鼠强到他家，走到路上，碰到一只狗狗，咬了我一口。'],
+            ['TEST_NET_Y0000000101_pawgXvPsdr8_S00120', '他每天晚上都会做同样一个噩梦，梦里的李松浑身鲜血淋漓。'],
+            ['TEST_NET_Y0000000122_zb0dLCYAFug_S00037', '来上这样一杯冰镇好的酸米酒，那感觉别提有多清凉舒爽了。'],
+            ['TEST_NET_Y0000000012_38miTB0gDQs_S00033', '项明利一味的摇头，但她的表情告诉了罗志成，她已经相信了他。'],
+            ['TEST_NET_Y0000000012_38miTB0gDQs_S00126', '唐骏的目光被他胸口的嫣红给烫到了，他甩手把刀扔在了地上。'],
+            ['TEST_NET_Y0000000017_42rrCB6ReDc_S00163', '呈现更多的，比如说这种商圈的报告啊，这种市场分析的研究啊。'],
+            ['TEST_NET_Y0000000020_5XD21BihDd8_S00124', '我敢拿性命担保，现在在座的每一个人，对唐家都是忠心耿耿的。'],
+            ['TEST_NET_Y0000000043_HmOXmzJuEhU_S00431', '然后我就彻底懵掉了，我本来是不担心的，他说完了，我真担心了。'],
+            ['TEST_NET_Y0000000066_TdmtONdJFjk_S00093', '这是给VICCO最大的动力OK.那么这期就这样，下期再见。'],
+            ['TEST_NET_Y0000000081_ceIGL_DHoSk_S00097', '也不能让九爷和洛爷在这里挂一辈子吧，吓到小孩子怎么办呢？'],
+            ['TEST_NET_Y0000000087_gEptCQjHk34_S00036', '他那个破门到底是破的主卧的门，还是那个女孩子房间那个门？'],
+            ['TEST_NET_Y0000000087_gEptCQjHk34_S00211', '不仅远远的低于那个法定时间，法定时间是一个月，而且也低于'],
+            ['TEST_NET_Y0000000087_gEptCQjHk34_S00326', '那个幺二零就说你们那个用毛巾打湿了，把自己的口鼻给捂住。'],
+            ['TEST_NET_Y0000000087_gEptCQjHk34_S00355', '讲啦，但是都是很笼统的，因为他们本身也不是第一批到达的嘛。'],
+            ['TEST_NET_Y0000000100_pK0sjf8ok-U_S00125', '所以呢这个东西可能她还是会同意的，可能她还是不会同意的。'],
+            ['TEST_NET_Y0000000101_pawgXvPsdr8_S00032', '你小子到镇上过好日子去了，一定早把我们哥儿几个给忘了吧。'],
+            ['TEST_NET_Y0000000101_pawgXvPsdr8_S00056', '说完也不管李松同不同意，几个人上来，拽着李松就走，李松无奈。'],
+            ['TEST_NET_Y0000000122_zb0dLCYAFug_S00083', '味道比超市买来的要好得多，这是市子从小吃到大的饮食依赖。'],
+            ['TEST_NET_Y0000000012_38miTB0gDQs_S00120', '我已经劝服林潇潇去公安局自首，她已经向警察承认所有的罪行。'],
+            ['TEST_NET_Y0000000022_5syYMcAt9i4_S00014', '顺便这篇文章的作者还认为，中国空军已经制定了新的训练方案。'],
+            ['TEST_NET_Y0000000027_86six1NWeK8_S00132', '我们学习政治的概念的时候，就要回到马克思主义的理解当中来。'],
+        ];
+
+        // var root = 'https://dl.fbaipublicfiles.com/speechbot/demo_samples';
+        var root = './audio';
+
+        function lock() {
+            $('#dataset').attr('disabled', 'disabled');
+            $('#tasks').attr('disabled', 'disabled');
+            $('#tests').attr('disabled', 'disabled');
+            $('#loading-status').show();
+        }
+        function unlock() {
+            $('#dataset').removeAttr('disabled');
+            $('#tasks').removeAttr('disabled');
+            $('#tests').removeAttr('disabled');
+            $('#loading-status').hide();
+        }
+
+        function preload(dataset, tasks, tests, push) {
+            lock();
+            $('#tasks').val(tasks);
+            $('#tests').val(tests);
+            $("#result-div").empty();
+            $("#result-div").append(createTable());
+            unlock();
+        }
+
+        preload(dataset, tasks, tests, true);
+
+        function createTable() {
+            var tableElem;
+            tableElem = document.createElement('table');
+            if (tasks === 'tts') {
+                return tts(tableElem);
+            }
+        }
+
+        function tts(tableElem) {
+            var headline, colElem, rowElem;
+
+            headline = document.createElement('tr');
+
+            colElem = document.createElement('td');
+            colElem.appendChild(document.createTextNode('ID'));
+            colElem.style.color = 'rgb(6, 150, 200)';
+            colElem.style.center = true;
+            headline.appendChild(colElem);
+
+            colElem = document.createElement('td');
+            headline.appendChild(colElem);
+
+            methods = tests_to_methods[tests];
+            console.log(tests);
+            console.log(tests_to_methods);
+            console.log(methods);
+            for (var ii = 0; ii < methods.length; ii++) {
+                colElem = document.createElement('td');
+                colElem.appendChild(document.createTextNode(method_to_hdr[methods[ii]]));
+                colElem.style.color = 'rgb(6, 150, 200)';
+                colElem.style.center = true;
+                colElem.style.whiteSpace = 'pre';
+                headline.appendChild(colElem);
+            }
+
+            tableElem.appendChild(headline);
+
+            var bg_color = 'white';
+            var txt_color = 'rgb(6, 150, 200)';
+
+            var file_list = id_list;
+            var test_dataset = dataset;
+
+            var N = file_list.length;
+            for (var j = 0; j < N; j++) {
+                rowElem = document.createElement('tr');
+                rowElem.style.backgroundColor = bg_color;
+
+                colElem = document.createElement('td');
+                colElem.appendChild(document.createTextNode(j.toString()));
+                colElem.style.color = txt_color;
+                colElem.style.center = true;
+                rowElem.appendChild(colElem);
+
+                colElem = document.createElement('td');
+                colElem.colSpan = (methods.length + 1).toString();
+                colElem.align = 'center';
+                colElem.appendChild(document.createTextNode(file_list[j][1]));
+                rowElem.appendChild(colElem);
+                
+                tableElem.appendChild(rowElem);
+
+                rowElem = document.createElement('tr');
+                colElem = document.createElement('td');
+                rowElem.appendChild(colElem);
+
+
+                colElem = document.createElement('td');
+                rowElem.appendChild(colElem);
+
+                for (var ii = 0; ii < methods.length; ii++) {
+                    colElem = document.createElement('td');
+                    audio_path = root + "/" + tasks + "/" + tests + "/"  + test_dataset + "/" + methods[ii] + "/" + file_list[j][0] + ".wav"
+                    audio_html = "<audio name=\"audio_" + (j * methods.length + ii).toString() + "\" controls=\"\"><source src=\"" + audio_path + "\" type=\"audio/mpeg\" /></audio>";
+                    colElem.innerHTML = audio_html;
+                    rowElem.appendChild(colElem);
+                }
+
+                tableElem.appendChild(rowElem);
+
+
+                rowElem = document.createElement('tr');
+                rowElem.style.backgroundColor = bg_color;
+
+                colElem = document.createElement('td');
+                colElem.appendChild(document.createTextNode("Transcript: "));
+                colElem.style.color = txt_color;
+                colElem.style.center = true;
+                rowElem.appendChild(colElem);
+
+                // if ((j + 1) % 10 === 0) {
+                //     flip = bg_color
+                //     bg_color = txt_color;
+                //     txt_color = flip;
+                // }
+            }
+
+            return tableElem;
+        }
+
+        function fetch_result() {
+            $(window).ready(function () {
+                // dataset = $("#dataset").val();
+                
+                // tasks = $("#tasks").val();
+                // $("#tasks").empty();
+                // $("#tasks").append('<option value="resynthesis">Resynthesis</option>');
+                // $("#tasks").append('<option value="voice_conversion">Voice Conversion</option>');
+                // $("#tasks").append('<option value="codec">Codec (Unseen Speakers)</option>');
+                // $("#tasks").val(""tasks"");
+                
+                tests = $("#tests").val();
+                
+                $("#result-div").empty();
+                $("#result-div").append(createTable());
+                unlock();
+            });
+        }
+
+        function record(sel) {
+            lock();
+            fetch_result();
+        }
+
+        window.addEventListener('popstate', function (e) {
+            preload(e.state["dataset"], e.state["tasks"], e.state["tests"], false);
+        });
+    </script>
+
+    <div class="content-container">
+        Sample paged based on <a style="color:rgb(6, 150, 200)"
+            href="https://daps.cs.princeton.edu/projects/HiFi-GAN/index.php"> HiFi-GAN</a> page.
+    </div>
+</body>
+
+</html>
